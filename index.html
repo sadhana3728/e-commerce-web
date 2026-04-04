@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUXE — Premium Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Razorpay -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+  <!-- ======= LOADER ======= -->
+  <div id="loader">
+    <div class="loader-inner">
+      <span>L</span><span>U</span><span>X</span><span>E</span>
+    </div>
+  </div>
+
+  <!-- ======= AUTH MODAL ======= -->
+  <div id="authModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeAuthModal()"></div>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+      </div>
+      <div id="loginForm">
+        <h2>Welcome Back</h2>
+        <input type="email" id="loginEmail" placeholder="Email address" />
+        <input type="password" id="loginPassword" placeholder="Password" />
+        <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+        <p id="loginMsg" class="auth-msg"></p>
+      </div>
+      <div id="signupForm" class="hidden">
+        <h2>Create Account</h2>
+        <input type="text" id="signupName" placeholder="Full name" />
+        <input type="email" id="signupEmail" placeholder="Email address" />
+        <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" />
+        <button class="btn-primary" onclick="handleSignup()">Create Account</button>
+        <p id="signupMsg" class="auth-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= CART SIDEBAR ======= -->
+  <div id="cartSidebar" class="cart-sidebar hidden">
+    <div class="cart-backdrop" onclick="toggleCart()"></div>
+    <div class="cart-panel">
+      <div class="cart-header">
+        <h3>Your Cart</h3>
+        <button onclick="toggleCart()">✕</button>
+      </div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-footer">
+        <div class="cart-total">
+          <span>Total</span>
+          <span id="cartTotal">₹0</span>
+        </div>
+        <button class="btn-primary" onclick="initiateCheckout()">Checkout with Razorpay</button>
+        <button class="btn-ghost" onclick="toggleCart()">Continue Shopping</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= PRODUCT MODAL ======= -->
+  <div id="productModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeProductModal()"></div>
+    <div class="modal-box product-modal-box">
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+      <div id="productModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ======= TOAST ======= -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ======= HEADER ======= -->
+  <header id="header">
+    <div class="header-left">
+      <button class="hamburger" onclick="toggleMobileMenu()">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="#" class="logo" onclick="showSection('home')">LUXE</a>
+    </div>
+    <nav id="mainNav">
+      <a href="#" onclick="showSection('home')" class="nav-link active">Home</a>
+      <a href="#" onclick="showSection('shop')" class="nav-link">Shop</a>
+      <a href="#" onclick="showSection('orders')" class="nav-link">Orders</a>
+    </nav>
+    <div class="header-right">
+      <button class="icon-btn" onclick="toggleSearch()" title="Search">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="icon-btn cart-icon" onclick="toggleCart()" title="Cart">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span id="cartBadge" class="cart-badge hidden">0</span>
+      </button>
+      <button class="icon-btn" id="userBtn" onclick="handleUserBtn()" title="Account">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+      <button id="logoutBtn" class="btn-ghost small hidden" onclick="handleLogout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- ======= SEARCH BAR ======= -->
+  <div id="searchBar" class="search-bar hidden">
+    <input type="text" id="searchInput" placeholder="Search products…" oninput="filterProducts()" />
+    <button onclick="toggleSearch()">✕</button>
+  </div>
+
+  <!-- ======= SECTIONS ======= -->
+  <main>
+
+    <!-- HOME -->
+    <section id="homeSection" class="section active">
+      <div class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+          <p class="hero-sub">New Collection 2025</p>
+          <h1 class="hero-title">Crafted for<br/><em>Connoisseurs</em></h1>
+          <p class="hero-desc">Discover products where design meets purpose. Curated for those who appreciate the finest things.</p>
+          <div class="hero-btns">
+            <button class="btn-primary large" onclick="showSection('shop')">Shop Now</button>
+            <button class="btn-ghost large" onclick="scrollToFeatured()">View Lookbook</button>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card card-1">
+            <div class="product-pill">New Arrival</div>
+            <div class="hero-img-placeholder">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <span>Premium Goods</span>
+          </div>
+          <div class="hero-card card-2">
+            <div class="hero-img-placeholder accent">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            </div>
+            <span>Timeless Design</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-bar">
+        <div class="stat"><strong>10K+</strong><span>Happy Customers</span></div>
+        <div class="stat"><strong>500+</strong><span>Products</span></div>
+        <div class="stat"><strong>4.9★</strong><span>Average Rating</span></div>
+        <div class="stat"><strong>Free</strong><span>Returns</span></div>
+      </div>
+
+      <!-- FEATURED -->
+      <div id="featuredSection" class="featured-section">
+        <div class="section-header">
+          <h2>Featured Products</h2>
+          <a href="#" onclick="showSection('shop')" class="see-all">See All →</a>
+        </div>
+        <div id="featuredGrid" class="product-grid"></div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="categories-section">
+        <h2>Shop by Category</h2>
+        <div class="categories-grid">
+          <div class="cat-card" onclick="filterByCategory('Electronics')">
+            <div class="cat-icon">⚡</div>
+            <span>Electronics</span>
+          </div>
+          <div class="cat-card" onclick="filterByCategory('Fashion')">
+            <div class="cat-icon">👗</div>
+            <span>Fashion</span>
+          </div>
+          <div class="cat-card" onclick="filterByCategory('Home')">
+            <div class="cat-icon">🏠</div>
+            <span>Home & Living</span>
+          </div>
+          <div class="cat-card" onclick="filterByCategory('Beauty')">
+            <div class="cat-icon">✨</div>
+            <span>Beauty</span>
+          </div>
+          <div class="cat-card" onclick="filterByCategory('Sports')">
+            <div class="cat-icon">🏃</div>
+            <span>Sports</span>
+          </div>
+          <div class="cat-card" onclick="filterByCategory('Books')">
+            <div class="cat-icon">📚</div>
+            <span>Books</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANNER -->
+      <div class="promo-banner">
+        <div class="promo-content">
+          <h3>Free Shipping on Orders Over ₹999</h3>
+          <p>Use code <strong>LUXE10</strong> for 10% off your first order</p>
+          <button class="btn-primary" onclick="showSection('shop')">Shop Now</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHOP -->
+    <section id="shopSection" class="section">
+      <div class="shop-header">
+        <div>
+          <h2>All Products</h2>
+          <p id="productCount" class="product-count">Loading...</p>
+        </div>
+        <div class="shop-controls">
+          <select id="categoryFilter" onchange="filterProducts()">
+            <option value="">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Home">Home & Living</option>
+            <option value="Beauty">Beauty</option>
+            <option value="Sports">Sports</option>
+            <option value="Books">Books</option>
+          </select>
+          <select id="sortFilter" onchange="filterProducts()">
+            <option value="default">Sort: Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+      </div>
+      <div id="shopGrid" class="product-grid"></div>
+      <div id="shopEmpty" class="empty-state hidden">
+        <div class="empty-icon">🔍</div>
+        <h3>No products found</h3>
+        <p>Try adjusting your search or filters</p>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="ordersSection" class="section">
+      <div class="shop-header">
+        <h2>My Orders</h2>
+      </div>
+      <div id="ordersContent"></div>
+    </section>
+
+  </main>
+
+  <!-- ======= FOOTER ======= -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">LUXE</div>
+        <p>Premium products for discerning tastes. Curated with care, delivered with love.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Shop</h4>
+        <a href="#">New Arrivals</a>
+        <a href="#">Best Sellers</a>
+        <a href="#">Sale</a>
+      </div>
+      <div class="footer-links">
+        <h4>Support</h4>
+        <a href="#">FAQ</a>
+        <a href="#">Shipping Policy</a>
+        <a href="#">Returns</a>
+      </div>
+      <div class="footer-links">
+        <h4>Company</h4>
+        <a href="#">About Us</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 LUXE Store. Built with Supabase & Razorpay.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
