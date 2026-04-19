@@ -1,9 +1,4 @@
--- ============================================
---  LUXE E-Commerce — Supabase Database Setup
--- ============================================
--- Run this in your Supabase SQL Editor
 
--- 1. PRODUCTS TABLE
 CREATE TABLE IF NOT EXISTS products (
   id              BIGSERIAL PRIMARY KEY,
   name            TEXT NOT NULL,
@@ -61,10 +56,3 @@ INSERT INTO products (name, description, price, original_price, category, emoji,
   ('Mechanical Keyboard TKL',     'Hot-swappable switches. Gasket-mounted. RGB per-key.', 9499, 12999, 'Electronics', '⌨️', 4.7,  654,  7, false, NULL),
   ('Design Thinking Handbook',    'From IDEO designers. Real-world case studies.',  649,   999, 'Books',       '📖', 4.9, 2341, 100, false, NULL);
 
--- ============================================
--- DONE! Now:
--- 1. Enable Email Auth in Authentication → Providers
--- 2. Copy your Project URL & anon key
--- 3. Paste them into app.js (SUPABASE_URL, SUPABASE_ANON)
--- 4. Add your Razorpay test key (RAZORPAY_KEY)
--- ============================================
